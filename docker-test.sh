@@ -77,7 +77,16 @@ for i in {1..30}; do
         break
     fi
     if [ $i -eq 30 ]; then
-        echo "   ❌ App failed to start"
+        echo "   ❌ App failed to start after 60 seconds"
+        echo ""
+        echo "🔍 Checking app container logs..."
+        docker logs project_tracker_app --tail 30
+        echo ""
+        echo "💡 Troubleshooting tips:"
+        echo "   1. Check if app container is running: docker ps -a"
+        echo "   2. View full logs: docker logs project_tracker_app"
+        echo "   3. Check if port 8000 is available: lsof -i :8000"
+        echo "   4. Try rebuilding: docker-compose down && docker-compose up --build -d"
         exit 1
     fi
     sleep 2
