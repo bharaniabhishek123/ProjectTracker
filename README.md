@@ -21,54 +21,77 @@ An AI-powered system that tracks team deliverables and provides chronological vi
 
 ## Prerequisites
 
-1. **Docker & Docker Compose** (recommended) OR:
-2. **Python 3.11+**
-3. **PostgreSQL 15+**
-4. **Ollama** - [Installation Guide](https://ollama.ai/)
+### For Docker (Recommended - Nothing Else Needed!)
+- **Docker Desktop** - [Install here](https://docs.docker.com/get-docker/)
+- That's it! No Python, PostgreSQL, or Ollama installation required.
 
-## Quick Start with Docker (Recommended)
+### For Manual Setup (Alternative)
+- **Python 3.11+**
+- **PostgreSQL 15+**
+- **Ollama** - [Installation Guide](https://ollama.ai/)
 
-### 1. Install Ollama
+## Quick Start with Docker (Recommended - No Local Installation!)
 
-First, install Ollama on your host machine:
+**Everything runs in containers - no need to install Python, PostgreSQL, or Ollama locally!**
 
-```bash
-# macOS/Linux
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Or download from https://ollama.ai/download
-```
-
-Pull the Llama 3.1 model:
-
-```bash
-ollama pull llama3.1
-```
-
-### 2. Start the Application
+### Automated Setup (Easiest)
 
 ```bash
 # Clone the repository
 git clone <repository-url>
 cd ProjectTracker
 
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f app
+# Run the automated setup and test script
+./docker-test.sh
 ```
 
-The application will be available at: **http://localhost:8000**
+This single command will:
+1. Build and start all containers (PostgreSQL, Ollama, FastAPI)
+2. Download the AI model
+3. Run automated tests
+4. Display access URLs
 
-### 3. Stop the Application
+**Time:** 5-10 minutes on first run (downloads ~8GB of images and models)
+
+### Manual Setup
 
 ```bash
+# Start all services
+docker-compose up -d --build
+
+# Wait for services to start (~30 seconds)
+docker-compose ps
+
+# Download AI model (first time only, ~2-3 minutes)
+docker exec project_tracker_ollama ollama pull llama3.1
+
+# Open your browser
+open http://localhost:8000
+```
+
+### Access Points
+
+- **Web Interface**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+
+### Stop/Manage Services
+
+```bash
+# Stop (keeps data)
 docker-compose down
 
-# To remove volumes (database data)
+# Stop and remove all data
 docker-compose down -v
+
+# View logs
+docker-compose logs -f
+
+# Restart
+docker-compose restart
 ```
+
+**📚 Detailed Docker Guide**: See [DOCKER_SETUP.md](DOCKER_SETUP.md) for complete instructions, troubleshooting, and tips.
 
 ## Manual Setup (Without Docker)
 

@@ -12,6 +12,8 @@ ENV/
 data/
 *.db
 *.sqlite
+test_tracker.db
+test_chroma_data/
 
 # Git
 .git/
@@ -28,3 +30,12 @@ data/
 
 # Logs
 *.log
+
+# Test files
+test_quick.py
+docker-test.sh
+docker-test.bat
+
+# Documentation
+DOCKER_SETUP.md
+*.md
