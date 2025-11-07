@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Project Tracker</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>AI Project Tracker</h1>
+            <p>Track team deliverables and progress with AI-powered insights</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('submit')">Submit Status</button>
+            <button class="tab" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="switchTab('search')">AI Search</button>
+            <button class="tab" onclick="switchTab('summary')">Weekly Summary</button>
+            <button class="tab" onclick="switchTab('team')">Team Members</button>
+        </div>
+
+        <!-- Submit Status Tab -->
+        <div id="submit" class="tab-content active">
+            <div class="card">
+                <h2>Submit Daily Status</h2>
+                <form id="status-form">
+                    <div class="form-group">
+                        <label for="team-member-select">Team Member</label>
+                        <select id="team-member-select" name="team_member_id" required>
+                            <option value="">Select team member...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status-text">What did you work on today?</label>
+                        <textarea id="status-text" name="status_text" required placeholder="Describe your progress, accomplishments, and any blockers..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Status</button>
+                </form>
+                <div id="status-message"></div>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content">
+            <div class="card">
+                <h2>Recent Status Updates</h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filter-member">Filter by Team Member</label>
+                        <select id="filter-member">
+                            <option value="">All Members</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-days">Time Period</label>
+                        <select id="filter-days" onchange="loadStatusUpdates()">
+                            <option value="7">Last 7 days</option>
+                            <option value="14">Last 14 days</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="status-list">
+                    <div class="loading">Loading status updates...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Search Tab -->
+        <div id="search" class="tab-content">
+            <div class="card">
+                <h2>Semantic Search</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Ask natural language questions like "What did John work on last week?" or "Show me all bug fixes"
+                </p>
+                <form id="search-form">
+                    <div class="form-group">
+                        <label for="search-query">Search Query</label>
+                        <input type="text" id="search-query" name="query" required placeholder="What did John work on last month?">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+                <div id="search-results"></div>
+            </div>
+        </div>
+
+        <!-- Weekly Summary Tab -->
+        <div id="summary" class="tab-content">
+            <div class="card">
+                <h2>Generate Weekly Summary</h2>
+                <form id="summary-form">
+                    <div class="form-group">
+                        <label for="summary-start-date">Start Date</label>
+                        <input type="date" id="summary-start-date" name="start_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="summary-member">Team Member (Optional)</label>
+                        <select id="summary-member" name="team_member_id">
+                            <option value="">All Members</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate Summary</button>
+                </form>
+                <div id="summary-result"></div>
+            </div>
+        </div>
+
+        <!-- Team Members Tab -->
+        <div id="team" class="tab-content">
+            <div class="card">
+                <h2>Register Team Member</h2>
+                <form id="team-form">
+                    <div class="form-group">
+                        <label for="member-name">Name</label>
+                        <input type="text" id="member-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="member-email">Email</label>
+                        <input type="email" id="member-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="member-role">Role (Optional)</label>
+                        <input type="text" id="member-role" name="role" placeholder="e.g., Software Engineer">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Register Member</button>
+                </form>
+                <div id="team-message"></div>
+            </div>
+
+            <div class="card">
+                <h2>Team Members</h2>
+                <div id="team-list">
+                    <div class="loading">Loading team members...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API base URL
+        const API_BASE = '/api';
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            // Load data when switching to certain tabs
+            if (tabName === 'dashboard') loadStatusUpdates();
+            if (tabName === 'team') loadTeamMembers();
+        }
+
+        // Load team members into select dropdowns
+        async function loadTeamMembersDropdown() {
+            try {
+                const response = await fetch(`${API_BASE}/team-members/`);
+                const members = await response.json();
+
+                const selects = [
+                    document.getElementById('team-member-select'),
+                    document.getElementById('filter-member'),
+                    document.getElementById('summary-member')
+                ];
+
+                selects.forEach(select => {
+                    if (select.id !== 'team-member-select') {
+                        select.innerHTML = '<option value="">All Members</option>';
+                    } else {
+                        select.innerHTML = '<option value="">Select team member...</option>';
+                    }
+
+                    members.forEach(member => {
+                        const option = document.createElement('option');
+                        option.value = member.id;
+                        option.textContent = `${member.name} (${member.email})`;
+                        select.appendChild(option);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading team members:', error);
+            }
+        }
+
+        // Submit status update
+        document.getElementById('status-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch(`${API_BASE}/status-updates/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        team_member_id: parseInt(formData.get('team_member_id')),
+                        status_text: formData.get('status_text')
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('status-message').innerHTML =
+                        '<div class="alert alert-success">Status submitted successfully!</div>';
+                    e.target.reset();
+                    setTimeout(() => {
+                        document.getElementById('status-message').innerHTML = '';
+                    }, 3000);
+                } else {
+                    const error = await response.json();
+                    document.getElementById('status-message').innerHTML =
+                        `<div class="alert alert-error">Error: ${error.detail}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('status-message').innerHTML =
+                    '<div class="alert alert-error">Error submitting status. Please try again.</div>';
+            }
+        });
+
+        // Register team member
+        document.getElementById('team-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch(`${API_BASE}/team-members/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        role: formData.get('role') || null
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('team-message').innerHTML =
+                        '<div class="alert alert-success">Team member registered successfully!</div>';
+                    e.target.reset();
+                    loadTeamMembers();
+                    loadTeamMembersDropdown();
+                    setTimeout(() => {
+                        document.getElementById('team-message').innerHTML = '';
+                    }, 3000);
+                } else {
+                    const error = await response.json();
+                    document.getElementById('team-message').innerHTML =
+                        `<div class="alert alert-error">Error: ${error.detail}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('team-message').innerHTML =
+                    '<div class="alert alert-error">Error registering team member. Please try again.</div>';
+            }
+        });
+
+        // Load status updates
+        async function loadStatusUpdates() {
+            const memberId = document.getElementById('filter-member').value;
+            const days = document.getElementById('filter-days').value;
+
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - parseInt(days));
+
+            let url = `${API_BASE}/status-updates/?limit=50`;
+            if (memberId) url += `&team_member_id=${memberId}`;
+            url += `&start_date=${startDate.toISOString()}`;
+
+            try {
+                const response = await fetch(url);
+                const updates = await response.json();
+
+                const listDiv = document.getElementById('status-list');
+                if (updates.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state">No status updates found</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = updates.map(update => `
+                    <div class="status-item">
+                        <div class="status-header">
+                            <span class="status-author">${update.team_member.name}</span>
+                            <span class="status-date">${new Date(update.date).toLocaleDateString()}</span>
+                        </div>
+                        <div class="status-text">${update.status_text}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('status-list').innerHTML =
+                    '<div class="alert alert-error">Error loading status updates</div>';
+            }
+        }
+
+        // Semantic search
+        document.getElementById('search-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('search-query').value;
+
+            document.getElementById('search-results').innerHTML = '<div class="loading">Searching...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/ai/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, limit: 10 })
+                });
+
+                const result = await response.json();
+
+                let html = `
+                    <div class="answer-box">
+                        <h3>AI Answer:</h3>
+                        <p>${result.answer}</p>
+                    </div>
+                `;
+
+                if (result.relevant_updates && result.relevant_updates.length > 0) {
+                    html += '<h3>Relevant Status Updates:</h3>';
+                    html += result.relevant_updates.map(item => `
+                        <div class="status-item">
+                            <div class="status-header">
+                                <span class="status-author">${item.status_update.team_member.name}</span>
+                                <span class="status-date">${new Date(item.status_update.date).toLocaleDateString()}</span>
+                            </div>
+                            <div class="status-text">${item.status_update.status_text}</div>
+                        </div>
+                    `).join('');
+                }
+
+                document.getElementById('search-results').innerHTML = html;
+            } catch (error) {
+                document.getElementById('search-results').innerHTML =
+                    '<div class="alert alert-error">Error performing search</div>';
+            }
+        });
+
+        // Generate weekly summary
+        document.getElementById('summary-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            document.getElementById('summary-result').innerHTML = '<div class="loading">Generating summary...</div>';
+
+            try {
+                const body = {
+                    start_date: formData.get('start_date') + 'T00:00:00'
+                };
+
+                const memberId = formData.get('team_member_id');
+                if (memberId) body.team_member_id = parseInt(memberId);
+
+                const response = await fetch(`${API_BASE}/ai/weekly-summary`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+
+                document.getElementById('summary-result').innerHTML = `
+                    <div class="summary-box">
+                        <h3>Weekly Summary</h3>
+                        <p><strong>Period:</strong> ${new Date(result.start_date).toLocaleDateString()} - ${new Date(result.end_date).toLocaleDateString()}</p>
+                        ${result.team_member ? `<p><strong>Team Member:</strong> ${result.team_member}</p>` : ''}
+                        <p><strong>Status Updates:</strong> ${result.status_count}</p>
+                        <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border-color);">
+                        <div style="white-space: pre-line;">${result.summary}</div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('summary-result').innerHTML =
+                    '<div class="alert alert-error">Error generating summary</div>';
+            }
+        });
+
+        // Load team members list
+        async function loadTeamMembers() {
+            try {
+                const response = await fetch(`${API_BASE}/team-members/`);
+                const members = await response.json();
+
+                const listDiv = document.getElementById('team-list');
+                if (members.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state">No team members registered</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = members.map(member => `
+                    <div class="status-item">
+                        <div class="status-header">
+                            <span class="status-author">${member.name}</span>
+                            <span class="status-date">Joined ${new Date(member.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="status-text">
+                            ${member.email} ${member.role ? `• ${member.role}` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('team-list').innerHTML =
+                    '<div class="alert alert-error">Error loading team members</div>';
+            }
+        }
+
+        // Set default date for summary
+        const today = new Date();
+        const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        document.getElementById('summary-start-date').valueAsDate = lastWeek;
+
+        // Initial load
+        loadTeamMembersDropdown();
+        document.getElementById('filter-member').addEventListener('change', loadStatusUpdates);
+    </script>
+</body>
+</html>
