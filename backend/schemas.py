@@ -89,53 +89,7 @@ class WeeklySummaryResponse(BaseModel):
     summary: str
     status_count: int
 
-# Goal Schemas
-class GoalBase(BaseModel):
-    """Base goal schema."""
-    title: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-    status: GoalStatus = GoalStatus.NOT_STARTED
-    start_date: Optional[datetime] = None
-    target_date: Optional[datetime] = None
-
-
-class GoalCreate(GoalBase):
-    """Schema for creating a goal."""
-    pass
-
-
-class GoalUpdate(BaseModel):
-    """Schema for updating a goal."""
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    status: Optional[GoalStatus] = None
-    start_date: Optional[datetime] = None
-    target_date: Optional[datetime] = None
-
-
-class GoalResponse(GoalBase):
-    """Schema for goal response."""
-    id: int
-    completed_date: Optional[datetime] = None
-    created_at: datetime
-    updated_at: datetime
-    task_count: int = 0
-    completed_task_count: int = 0
-    progress_percentage: float = 0.0
-
-    class Config:
-        from_attributes = True
-
-
-class GoalWithTasks(GoalResponse):
-    """Goal with its tasks."""
-    tasks: List['TaskResponse'] = []
-
-    class Config:
-        from_attributes = True
-
-
-# Task Schemas
+# Task Schemas (must be defined before GoalWithTasks which references them)
 class TaskBase(BaseModel):
     """Base task schema."""
     title: str = Field(..., min_length=1, max_length=200)
@@ -174,6 +128,45 @@ class TaskResponse(TaskBase):
         from_attributes = True
 
 
+# Goal Schemas (must be defined after TaskResponse and before TaskWithDetails)
+class GoalBase(BaseModel):
+    """Base goal schema."""
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    status: GoalStatus = GoalStatus.NOT_STARTED
+    start_date: Optional[datetime] = None
+    target_date: Optional[datetime] = None
+
+
+class GoalCreate(GoalBase):
+    """Schema for creating a goal."""
+    pass
+
+
+class GoalUpdate(BaseModel):
+    """Schema for updating a goal."""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    status: Optional[GoalStatus] = None
+    start_date: Optional[datetime] = None
+    target_date: Optional[datetime] = None
+
+
+class GoalResponse(GoalBase):
+    """Schema for goal response."""
+    id: int
+    completed_date: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    task_count: int = 0
+    completed_task_count: int = 0
+    progress_percentage: float = 0.0
+
+    class Config:
+        from_attributes = True
+
+
+# Task details and Goal with tasks (must come after both TaskResponse and GoalResponse are defined)
 class TaskWithDetails(TaskResponse):
     """Task with goal and assignee details."""
     goal: Optional[GoalResponse] = None
@@ -184,7 +177,15 @@ class TaskWithDetails(TaskResponse):
         from_attributes = True
 
 
-# Progress Schemas
+class GoalWithTasks(GoalResponse):
+    """Goal with its tasks."""
+    tasks: List[TaskResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+# Progress Schemas (must come after GoalResponse and TeamMemberResponse are defined)
 class GoalProgressResponse(BaseModel):
     """Schema for goal progress report."""
     goal: GoalResponse
