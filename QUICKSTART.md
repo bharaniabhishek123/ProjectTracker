@@ -4,13 +4,23 @@
 
 You only need **Docker Desktop** installed. Nothing else!
 
-### 1. One Command to Rule Them All
+### 1. Choose Your Setup Speed
 
+**Option A: Full Setup with AI (5-10 min first time)**
 ```bash
 ./docker-test.sh
 ```
 
-That's it! This will:
+**Option B: Quick Start without waiting for AI (30 seconds)**
+```bash
+./docker-quick.sh
+```
+
+Both options start all containers, but the quick version doesn't wait for Ollama to be fully ready.
+
+### What the Full Setup Does
+
+The `docker-test.sh` script will:
 - ✅ Start PostgreSQL in a container
 - ✅ Start Ollama (AI) in a container
 - ✅ Start the web app in a container
@@ -88,6 +98,30 @@ docker-compose down -v
 Use `docker-test.bat` instead of `docker-test.sh`
 
 ## Troubleshooting
+
+**Ollama Taking Too Long or Timing Out?**
+
+If you see "Ollama failed to start" or it's taking forever:
+
+**Solution 1: Use the quick script (recommended)**
+```bash
+# Kill and restart with quick script
+docker-compose down
+./docker-quick.sh
+```
+The quick script starts everything but doesn't wait for Ollama to be fully ready. Your app works immediately, and AI features become available in 1-2 minutes background.
+
+**Solution 2: Skip Ollama temporarily**
+```bash
+docker-compose up -d
+curl http://localhost:8000/health  # Test if app is ready
+# Use the app without AI features, or pull model later:
+docker exec project_tracker_ollama ollama pull llama3.1
+```
+
+**Why?** Ollama can take 30-120 seconds to start. The core app doesn't need it!
+
+---
 
 **Containers won't start?**
 ```bash

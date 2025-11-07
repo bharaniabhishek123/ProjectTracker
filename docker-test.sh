@@ -54,15 +54,17 @@ for i in {1..30}; do
 done
 
 # Wait for Ollama
-echo "   Waiting for Ollama..."
-for i in {1..30}; do
-    if docker exec project_tracker_ollama curl -s http://localhost:11434/api/tags &> /dev/null; then
+echo "   Waiting for Ollama (this may take 30-60 seconds)..."
+for i in {1..60}; do
+    # Check if ollama service is responding
+    if curl -s http://localhost:11434/api/tags &> /dev/null; then
         echo "   ✅ Ollama is ready"
         break
     fi
-    if [ $i -eq 30 ]; then
-        echo "   ❌ Ollama failed to start"
-        exit 1
+    if [ $i -eq 60 ]; then
+        echo "   ⚠️  Ollama is taking longer than expected, but continuing..."
+        echo "   Note: AI features may take a moment to become available"
+        break
     fi
     sleep 2
 done
@@ -83,8 +85,22 @@ done
 
 echo ""
 echo "🤖 Step 3: Pulling Ollama model (llama3.1)..."
-echo "   This may take a few minutes on first run..."
-docker exec project_tracker_ollama ollama pull llama3.1
+echo "   This may take 2-5 minutes on first run (downloads ~4GB)..."
+echo "   Subsequent runs will skip this step if model is already downloaded."
+echo ""
+
+# Check if model already exists
+if docker exec project_tracker_ollama ollama list 2>/dev/null | grep -q "llama3.1"; then
+    echo "   ✅ Model already downloaded, skipping..."
+else
+    docker exec project_tracker_ollama ollama pull llama3.1
+    if [ $? -eq 0 ]; then
+        echo "   ✅ Model downloaded successfully"
+    else
+        echo "   ⚠️  Model download had issues, but continuing..."
+        echo "   You can manually pull it later: docker exec project_tracker_ollama ollama pull llama3.1"
+    fi
+fi
 
 echo ""
 echo "🧪 Step 4: Running API tests..."
