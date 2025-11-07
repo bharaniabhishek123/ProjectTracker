@@ -1,0 +1,132 @@
+# 🚀 Quick Start - 5 Minute Setup
+
+## For POC Testing (No Local Installation!)
+
+You only need **Docker Desktop** installed. Nothing else!
+
+### 1. One Command to Rule Them All
+
+```bash
+./docker-test.sh
+```
+
+That's it! This will:
+- ✅ Start PostgreSQL in a container
+- ✅ Start Ollama (AI) in a container
+- ✅ Start the web app in a container
+- ✅ Download the AI model
+- ✅ Run automated tests
+- ✅ Show you the URL
+
+**Time:** 5-10 minutes first time (downloading images)
+**Subsequent runs:** 30 seconds
+
+### 2. Access Your Application
+
+Open in browser: **http://localhost:8000**
+
+### 3. What You Get
+
+```
+┌─────────────────────────────────────┐
+│   Your Computer                     │
+│   (Only Docker Installed)           │
+│                                     │
+│   ┌──────────┐  ┌──────────┐       │
+│   │PostgreSQL│  │  Ollama  │       │
+│   └────┬─────┘  └────┬─────┘       │
+│        └──────┬───────┘             │
+│               │                     │
+│         ┌─────▼─────┐               │
+│         │  Web App  │               │
+│         └───────────┘               │
+│               │                     │
+└───────────────┼─────────────────────┘
+                │
+         Browser Access
+      localhost:8000
+```
+
+### 4. Quick Demo
+
+1. **Register Team Members** (Team Members tab)
+   - Add Alice, Bob, Charlie
+
+2. **Submit Status Updates** (Submit Status tab)
+   - "Implemented feature X"
+   - "Fixed bugs Y and Z"
+   - "Completed code review"
+
+3. **View Dashboard** (Dashboard tab)
+   - See all updates chronologically
+   - Filter by person or date
+
+4. **Try AI Search** (AI Search tab)
+   - "What did Alice work on?"
+   - "Show me all bug fixes"
+   - "What features were completed?"
+
+5. **Generate Summary** (Weekly Summary tab)
+   - Pick a date range
+   - Get AI-generated summary
+
+### 5. Stop Everything
+
+```bash
+docker-compose down
+```
+
+### 6. Clean Restart (Fresh Database)
+
+```bash
+docker-compose down -v
+./docker-test.sh
+```
+
+## Windows Users
+
+Use `docker-test.bat` instead of `docker-test.sh`
+
+## Troubleshooting
+
+**Containers won't start?**
+```bash
+docker-compose logs -f
+```
+
+**Port already in use?**
+```bash
+# Stop other services using these ports:
+# 8000 (web), 5432 (postgres), 11434 (ollama)
+```
+
+**Clean slate?**
+```bash
+docker-compose down -v
+docker system prune -a
+./docker-test.sh
+```
+
+## What's Running?
+
+Check container status:
+```bash
+docker-compose ps
+```
+
+View logs:
+```bash
+docker-compose logs -f app     # Application logs
+docker-compose logs -f db      # Database logs
+docker-compose logs -f ollama  # AI service logs
+```
+
+## Next Steps
+
+- **Full Guide**: [DOCKER_SETUP.md](DOCKER_SETUP.md)
+- **Architecture**: [README.md](README.md)
+- **API Docs**: http://localhost:8000/docs (after starting)
+
+---
+
+**Perfect for POC - Zero setup hassle!** 🎉
