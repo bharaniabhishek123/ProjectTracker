@@ -32,6 +32,10 @@ wheels/
 *.sqlite
 *.sqlite3
 
+# Test files
+test_tracker.db
+test_chroma_data/
+
 # ChromaDB
 chroma_data/
 data/
