@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import get_settings
 from backend.database import init_db
-from backend.routes import team_members, status_updates, ai_features
+from backend.routes import team_members, status_updates, ai_features, goals, tasks
 import uvicorn
 
 # Initialize FastAPI app
@@ -25,6 +25,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(team_members.router)
+app.include_router(goals.router)
+app.include_router(tasks.router)
 app.include_router(status_updates.router)
 app.include_router(ai_features.router)
 
